@@ -1,0 +1,18 @@
+
+spring:
+  datasource:
+    driver-class-name:  org.postgresql.Driver
+    username: postgres
+    url: jdbc:postgresql://localhost:5432/postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    show-sql: true
+  jwt:
+     secret_key: Don'tGiveUp
+
+server:
+    error:
+      include-message: always
