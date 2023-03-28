@@ -59,7 +59,7 @@ public class SubCategory {
 
     @PermitAll
     @GetMapping("/sort")
-    public List<SubCategoriesResponse> sortByName(@RequestParam(required = false) String word) {
+    public List<SubCategoryResponse> sortByName(@RequestParam(required = false) String word) {
         return service.sortByName(word);
     }
 }

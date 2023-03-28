@@ -14,7 +14,7 @@ import java.util.List;
 public class SubCategory {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sub_category_seq")
-    @SequenceGenerator(name = "sub_category_seq")
+    @SequenceGenerator(name = "sub_category_seq",allocationSize = 1)
     @Column(name = "id", nullable = false)
     private Long id;
     private String name;

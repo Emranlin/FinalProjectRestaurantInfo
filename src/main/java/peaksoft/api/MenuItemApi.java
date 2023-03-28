@@ -8,6 +8,8 @@ import peaksoft.dto.response.menuItem.MenuItemResponse;
 import peaksoft.dto.response.menuItem.MenuItemResponseFilter;
 import peaksoft.dto.response.menuItem.MenuItemResponseSearch;
 import peaksoft.dto.response.menuItem.MenuItemResponseSort;
+import peaksoft.dto.response.pagination.PaginationResponse;
+import peaksoft.dto.response.pagination.PaginationResponseMenuItem;
 import peaksoft.service.MenuItemService;
 
 import java.util.List;
@@ -61,5 +63,9 @@ public class MenuItemApi {
     @GetMapping("/filter")
     public List<MenuItemResponseFilter> filterByName(@RequestParam(required = false) Boolean isTrue) {
         return service.filterByVegetarian(isTrue);
+    }
+    @GetMapping("/pagination")
+    public PaginationResponseMenuItem getMenuItemPagination(@RequestParam int page, @RequestParam int size){
+        return service.getMenuItemPagination(page,size);
     }
 }

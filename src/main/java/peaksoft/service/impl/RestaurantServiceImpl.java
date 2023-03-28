@@ -7,6 +7,7 @@ import peaksoft.dto.response.restaurant.RestaurantResponseGetAll;
 import peaksoft.dto.response.restaurant.RestaurantResponseGetById;
 import peaksoft.dto.response.SimpleResponse;
 import peaksoft.entity.Restaurant;
+import peaksoft.exception.AlreadyExistsException;
 import peaksoft.exception.NotFoundException;
 import peaksoft.repository.RestaurantRepository;
 import peaksoft.service.RestaurantService;
@@ -24,6 +25,10 @@ public class RestaurantServiceImpl implements RestaurantService {
 
     @Override
     public SimpleResponse saveRestaurant(RestaurantRequest restaurantRequest) {
+        Boolean exists=restaurantRepository.existsByName(restaurantRequest.name());
+        if(exists){
+            return SimpleResponse.builder().httpStatus(HttpStatus.CONFLICT).message(String.format("Restaurant with name : %s already exists",restaurantRequest.name())).build();
+        }
         Restaurant restaurant = new Restaurant();
         restaurant.setName(restaurantRequest.name());
         restaurant.setLocation(restaurantRequest.location());
@@ -40,28 +45,31 @@ public class RestaurantServiceImpl implements RestaurantService {
 
     @Override
     public RestaurantResponseGetById getByIdRestaurant(Long restaurantId) {
-        Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow(() -> new NotFoundException(String.format("Restaurant with id:%s not found", restaurantId)));
+        Restaurant restaurant = restaurantRepository.findById(restaurantId).orElseThrow(() -> new NotFoundException(String.format("Restaurant with id: %s not found", restaurantId)));
         if (restaurant.getNumberOfEmployee() <= 15) {
             System.out.println("The isn't vacancy ");
         } else {
             restaurant.setNumberOfEmployee(restaurant.getUsers().size());
 
             restaurantRepository.save(restaurant);
-
-            return restaurantRepository.getRestaurantById(restaurantId).orElseThrow(() -> new NoSuchElementException(String.format("Restaurant with id:%s not found", restaurantId)));
         }
-        return null;
+            return restaurantRepository.getRestaurantById(restaurantId).get();
+
     }
 
     @Override
     public SimpleResponse updateRestaurant(Long restaurantId, RestaurantRequest restaurantRequest) {
-        Restaurant updateRestaurant = restaurantRepository.findById(restaurantId).orElseThrow(() -> new RuntimeException("Not found restaurant"));
+        Restaurant updateRestaurant = restaurantRepository.findById(restaurantId).orElseThrow(() -> new NotFoundException("Not found restaurant"));
+        Boolean exists=restaurantRepository.existsByName(restaurantRequest.name());
+        if(exists){
+            return SimpleResponse.builder().httpStatus(HttpStatus.CONFLICT).message(String.format("Restaurant with name : %s already exists",restaurantRequest.name())).build();
+        }
         updateRestaurant.setLocation(restaurantRequest.location());
         updateRestaurant.setName(restaurantRequest.name());
         updateRestaurant.setRestType(restaurantRequest.restType());
         updateRestaurant.setService(restaurantRequest.service());
         restaurantRepository.save(updateRestaurant);
-        return SimpleResponse.builder().httpStatus(HttpStatus.OK).message(String.format("Restaurant with id: %s successful updated")).build();
+        return SimpleResponse.builder().httpStatus(HttpStatus.OK).message(String.format("Restaurant with id: %s successful updated",restaurantId)).build();
 
     }
 

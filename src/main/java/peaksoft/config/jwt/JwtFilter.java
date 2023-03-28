@@ -22,6 +22,8 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
+
+
     private final UserRepository userRepository;
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,

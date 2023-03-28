@@ -1,5 +1,8 @@
 package peaksoft.service.impl;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import peaksoft.dto.request.MenuItemRequest;
@@ -8,6 +11,8 @@ import peaksoft.dto.response.menuItem.MenuItemResponse;
 import peaksoft.dto.response.menuItem.MenuItemResponseFilter;
 import peaksoft.dto.response.menuItem.MenuItemResponseSearch;
 import peaksoft.dto.response.menuItem.MenuItemResponseSort;
+import peaksoft.dto.response.pagination.PaginationResponse;
+import peaksoft.dto.response.pagination.PaginationResponseMenuItem;
 import peaksoft.entity.MenuItem;
 import peaksoft.entity.Restaurant;
 import peaksoft.entity.SubCategory;
@@ -20,6 +25,7 @@ import peaksoft.service.MenuItemService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 public class MenuItemServiceImpl implements MenuItemService {
@@ -101,5 +107,20 @@ public class MenuItemServiceImpl implements MenuItemService {
     @Override
     public List<MenuItemResponseFilter> filterByVegetarian(Boolean isTrue) {
         return menuItemRepository.filterByVegetarian(isTrue);
+    }
+
+    @Override
+    public PaginationResponseMenuItem getMenuItemPagination(int page, int size) {
+        Pageable pageable= PageRequest.of(page, size);
+        Page<MenuItemResponse> pagedMenuItem = menuItemRepository.findAllProjectedBy(pageable);
+
+        List<MenuItemResponse> collect = pagedMenuItem.getContent().stream().map(menuItem -> new MenuItemResponse(menuItem.id(), menuItem.name()
+                        , menuItem.image(), menuItem.price(), menuItem.description(), menuItem.isVegetarian()))
+                .toList();
+        PaginationResponseMenuItem paginationResponse=new PaginationResponseMenuItem();
+        paginationResponse.setMenuItemResponseList(collect);
+        paginationResponse.setCurrentPage(pagedMenuItem.getNumber()+1);
+        paginationResponse.setPageSize(pagedMenuItem.getSize());
+        return paginationResponse;
     }
 }

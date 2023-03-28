@@ -4,6 +4,7 @@ import lombok.Builder;
 
 @Builder
 public record RestaurantResponseGetById(
+        Long id,
         String name,
         String location,
         String restType,

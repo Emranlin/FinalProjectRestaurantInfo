@@ -2,6 +2,7 @@ package peaksoft.api;
 
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import peaksoft.dto.request.UserLoginRequest;
@@ -9,6 +10,7 @@ import peaksoft.dto.request.UserLoginRequest;
 import peaksoft.dto.request.UserRequestAssign;
 import peaksoft.dto.request.UserRequestSave;
 import peaksoft.dto.response.SimpleResponse;
+import peaksoft.dto.response.pagination.PaginationResponse;
 import peaksoft.dto.response.user.UserResponse;
 import peaksoft.dto.response.user.UserResponseGetAll;
 import peaksoft.dto.response.user.UserResponseGetById;
@@ -34,8 +36,9 @@ public class UserApi {
 
     @PostMapping
     @PermitAll
-    public SimpleResponse saveUser(@RequestBody UserRequestSave userRequestSave) {
-        return userService.saveUser(userRequestSave);
+    public SimpleResponse saveUser(@Valid @RequestBody UserRequestSave userRequestSave,
+                                   @RequestParam(required = false) Long restaurantId) {
+        return userService.saveUser(userRequestSave,restaurantId);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -59,7 +62,7 @@ public class UserApi {
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/{userId}")
-    public SimpleResponse updateUser(@PathVariable long userId, @RequestBody UserRequestSave userRequestSave) {
+    public SimpleResponse updateUser(@Valid @PathVariable Long userId, @RequestBody UserRequestSave userRequestSave) {
         return userService.updateUser(userId, userRequestSave);
     }
 
@@ -67,6 +70,10 @@ public class UserApi {
     @PostMapping("/assign/{userId}")
     public SimpleResponse assignUser(@PathVariable Long userId, @RequestBody UserRequestAssign requestAssign) {
         return userService.assignUser(userId, requestAssign);
+    }
+    @GetMapping("/pagination")
+    public PaginationResponse getUserPagination(@RequestParam (defaultValue = "1") int page, @RequestParam (defaultValue = "10") int size){
+        return userService.getUserPagination(page,size);
     }
 
 }

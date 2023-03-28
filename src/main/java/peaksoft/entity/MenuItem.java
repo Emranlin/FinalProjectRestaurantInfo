@@ -17,7 +17,7 @@ import java.util.Set;
 public class MenuItem {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "menu_item_seq")
-    @SequenceGenerator(name = "menu_item_seq")
+    @SequenceGenerator(name = "menu_item_seq",allocationSize = 1)
     @Column(name = "id", nullable = false)
     private Long id;
     private String name;

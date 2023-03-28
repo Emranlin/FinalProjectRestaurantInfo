@@ -31,6 +31,7 @@ public class RestaurantApi {
     }
 
     @GetMapping("/{restaurantId}")
+    @PreAuthorize("permitAll()")
     public RestaurantResponseGetById getById(@PathVariable Long restaurantId){
         return restaurantService.getByIdRestaurant(restaurantId);
 

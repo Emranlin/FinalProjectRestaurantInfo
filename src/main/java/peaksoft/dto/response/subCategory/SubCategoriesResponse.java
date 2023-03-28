@@ -11,7 +11,6 @@ import java.util.List;
 @NoArgsConstructor
 @ToString
 public class SubCategoriesResponse {
-    @JsonIgnore
     private String categoryName;
     private String name;
 

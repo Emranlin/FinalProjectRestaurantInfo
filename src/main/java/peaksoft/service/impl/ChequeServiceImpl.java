@@ -13,6 +13,7 @@ import peaksoft.entity.Cheque;
 import peaksoft.entity.MenuItem;
 import peaksoft.entity.Restaurant;
 import peaksoft.entity.User;
+import peaksoft.exception.NotFoundException;
 import peaksoft.repository.ChequeRepository;
 import peaksoft.repository.MenuItemRepository;
 import peaksoft.repository.RestaurantRepository;
@@ -20,8 +21,10 @@ import peaksoft.repository.UserRepository;
 import peaksoft.service.ChequeService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Transactional
 @Service
@@ -39,26 +42,32 @@ public class ChequeServiceImpl implements ChequeService {
     }
 
     @Override
-    public SimpleResponse saveCheque(Long menuItemId, ChequeRequest chequeRequest) {
-        MenuItem menuItem = menuItemRepository.findById(menuItemId)
-                .orElseThrow(() -> new NoSuchElementException(String.format("MenuItem with id: %s not found",menuItemId)));
-
-
-             User user=(userRepository.findById(chequeRequest.userId())
-                        .orElseThrow(() -> new NoSuchElementException(String.format("User with id: %s not found", chequeRequest.userId()))));
+    public SimpleResponse saveCheque(Long userId, ChequeRequest chequeRequest) {
+        List<MenuItem> menuItems = new ArrayList<>();
         Cheque cheque = new Cheque();
         cheque.setCreatedAt(LocalDate.now());
-        cheque.setPriceAverage(menuItem.getPrice().intValue());
+        for (Long mealId : chequeRequest.menuItemId()) {
+            MenuItem menuItem = menuItemRepository.findById(mealId).orElseThrow(
+                    () -> new NotFoundException(String.format("Meal with id: %s  is not found!", mealId)));
+            menuItems.add(menuItem);
+        }
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new NotFoundException(String.format("User with id: %s not found", userId)));
         cheque.setUser(user);
-        menuItem.addCheque(cheque);
+        int summa=0;
+        for (MenuItem menuItem : menuItems) {
+            menuItem.getCheques().add(cheque);
+            summa += menuItem.getPrice().intValue();
+        }
+        cheque.setPriceAverage(summa);
         chequeRepository.save(cheque);
         return SimpleResponse.builder().httpStatus(HttpStatus.OK).message(String.format("Cheque with id: %s successfully saved", cheque.getId())).build();
     }
 
     @Override
     public ChequeResponse getByIdCheque(Long chequeId) {
-        Cheque cheque = chequeRepository.findById(chequeId).orElseThrow(()->new NoSuchElementException(String.format("Cheque with id:%s not found",chequeId)));
-        User user = userRepository.findById(cheque.getUser().getId()).orElseThrow();
+        Cheque cheque = chequeRepository.findById(chequeId).orElseThrow(() -> new NotFoundException(String.format("Cheque with id:%s not found", chequeId)));
+        User user = userRepository.findById(cheque.getUser().getId()).orElseThrow(()->new NotFoundException("User with id not found"));
         int summa = 0;
         for (MenuItem menuItem : cheque.getMenuItems()) {
             summa += menuItem.getPrice().intValue();
@@ -68,7 +77,7 @@ public class ChequeServiceImpl implements ChequeService {
         BigDecimal grandTotal = BigDecimal.valueOf(summa + service);
         ChequeResponse response = new ChequeResponse();
         response.setFullName(user.getFirstName() + " " + user.getLastName());
-        response.setMenuItems(cheque.getMenuItems());
+        response.setMeals(chequeRepository.getMenuItem(chequeId));
         response.setAveragePrice(summa);
         response.setService(service);
         response.setGrandTotal(grandTotal);
@@ -77,25 +86,41 @@ public class ChequeServiceImpl implements ChequeService {
 
     @Override
     public SimpleResponse deleteCheque(Long chequeId) {
+        Cheque cheque = chequeRepository.findById(chequeId).orElseThrow(() -> new NotFoundException(String.format("Cheque with id :%s not found", chequeId)));
+        cheque.getMenuItems().forEach(menuItem -> menuItem.getCheques().remove(cheque));
         chequeRepository.deleteById(chequeId);
         return SimpleResponse.builder().httpStatus(HttpStatus.OK).message(String.format("Cheque with id: %s successfully updated", chequeId)).build();
     }
 
     @Override
     public SimpleResponse updateCheque(Long chequeId, ChequeRequest chequeRequest) {
-        Cheque cheque = chequeRepository.findById(chequeId).orElseThrow(()->new NoSuchElementException(String.format("The cheque with this id: %s not found",chequeId)));
-        cheque.setCreatedAt(chequeRequest.createdAt());
-        chequeRepository.save(cheque);
-        return SimpleResponse.builder().httpStatus(HttpStatus.OK).message(String.format("Cheque with id: %s successfully updated", cheque.getId())).build();
+        List<MenuItem> menuItems;
+        Cheque cheque = chequeRepository.findById(chequeId).orElseThrow(
+                () -> new NotFoundException(String.format("Cheque with id :%s is not found!", chequeId)));
+        menuItems = chequeRequest.menuItemId().stream().map(mealId -> menuItemRepository.findById(mealId).orElseThrow(
+                () -> new NotFoundException(String.format("Meal with id:%s is not found!", mealId)))).collect(Collectors.toList());
+
+        for (MenuItem menuItem : cheque.getMenuItems()) {
+            menuItem.getCheques().remove(cheque);
+        }
+        for (MenuItem menuItem : menuItems) {
+            menuItem.getCheques().add(cheque);
+        }
+        return SimpleResponse.builder()
+                .httpStatus(HttpStatus.OK)
+                .message("Your check has been updated!")
+                .build();
     }
 
 
     @Override
-    public ChequeResponseSumPerDay countWaiterCheque(Long userId) {
-        List<MenuItemForCheque> cheques = menuItemRepository.findUserIdChequeDate(userId);
+    public ChequeResponseSumPerDay countWaiterCheque(Long userId, LocalDate date) {
+        List<Cheque> cheques = chequeRepository.findByUser_IdAndCreatedAt(userId, date);
         int summa = 0;
-        for (MenuItemForCheque cheque : cheques) {
-            summa += cheque.price().intValue();
+        for (Cheque cheque : cheques) {
+            for (MenuItem menuItem : cheque.getMenuItems()) {
+                summa += menuItem.getPrice().intValue();
+            }
         }
         ChequeResponseSumPerDay response = new ChequeResponseSumPerDay();
         User user = userRepository.findById(userId).orElseThrow();
@@ -106,25 +131,13 @@ public class ChequeServiceImpl implements ChequeService {
     }
 
     @Override
-    public ChequeRestaurantAverage averageChequeRestaurant() {
-        Restaurant restaurant = repository.findById(1L).orElseThrow();
-
-        int summa = 0;
-        int count = 0;
-        for (User user : restaurant.getUsers()) {
-            for (Cheque cheque : user.getCheques()) {
-                var day = LocalDate.now().getDayOfMonth() - cheque.getCreatedAt().getDayOfMonth();
-                if (day == 1) {
-                    count++;
-                    summa += cheque.getPriceAverage();
-                }
-            }
-        }
-        int averageSum = summa / count;
-        ChequeRestaurantAverage restaurantAverage = new ChequeRestaurantAverage();
-        restaurantAverage.setName(restaurant.getName());
-        restaurantAverage.setTotalGrand(averageSum);
-
-        return restaurantAverage;
+    public SimpleResponse averageChequeRestaurant(LocalDate date) {
+        Integer avg = chequeRepository.avg(date);
+        return SimpleResponse.builder().httpStatus(HttpStatus.OK).message(String.format("Average check  of date: %s and total summa : %s", date, avg)).build();
     }
+
+
 }
+
+
+

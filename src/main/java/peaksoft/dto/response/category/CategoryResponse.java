@@ -5,9 +5,10 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class CategoryResponse{
-    private String name;
-    private String categoryName;
+
+public record CategoryResponse(
+        Long id,
+     String name
+){
+
 }

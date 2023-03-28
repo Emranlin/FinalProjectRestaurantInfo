@@ -5,7 +5,9 @@ import lombok.Builder;
 import java.math.BigDecimal;
 @Builder
 public record MenuItemForCheque(
+        Long id,
         String name,
-        BigDecimal price
+        BigDecimal price,
+        Long count
 ) {
 }

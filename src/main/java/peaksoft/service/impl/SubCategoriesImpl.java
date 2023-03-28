@@ -7,6 +7,8 @@ import peaksoft.dto.response.subCategory.SubCategoriesResponse;
 import peaksoft.dto.response.subCategory.SubCategoryResponse;
 import peaksoft.entity.Category;
 import peaksoft.entity.SubCategory;
+import peaksoft.exception.BadRequestException;
+import peaksoft.exception.NotFoundException;
 import peaksoft.repository.CategoryRepository;
 import peaksoft.repository.SubCategoryRepository;
 import peaksoft.service.SubCategoryService;
@@ -29,8 +31,14 @@ public class SubCategoriesImpl implements SubCategoryService {
     @Override
     public SimpleResponse saveSubCategories(SubCategoryRequest subCategoryRequest) {
         Category category = categoryRepository.findById(subCategoryRequest.categoryId())
-                .orElseThrow(() -> new NoSuchElementException(
+                .orElseThrow(() -> new NotFoundException(
                         String.format("Category with id: %s not found", subCategoryRequest.categoryId())));
+        if (subCategoryRepository.findAll().stream().anyMatch(s->s.getName().equals(subCategoryRequest.name()))) {
+            return SimpleResponse.builder()
+                    .httpStatus(HttpStatus.CONFLICT)
+                    .message(String.format("Category with name: %s already exists!", subCategoryRequest.name()))
+                    .build();
+        }
 
         SubCategory subCategory = new SubCategory();
         subCategory.setName(subCategoryRequest.name());
@@ -47,7 +55,7 @@ public class SubCategoriesImpl implements SubCategoryService {
     @Override
     public SubCategoryResponse getById(Long subCatId) {
         Category category = categoryRepository.findById(subCatId)
-                .orElseThrow(() -> new NoSuchElementException(
+                .orElseThrow(() -> new NotFoundException(
                         String.format("Category with id: %s not found", subCatId)));
 
         return subCategoryRepository.getSubCategoriesById(subCatId);
@@ -57,7 +65,7 @@ public class SubCategoriesImpl implements SubCategoryService {
     @Override
     public SimpleResponse deleteSubCat(Long subCatId) {
         Category category = categoryRepository.findById(subCatId)
-                .orElseThrow(() -> new NoSuchElementException(
+                .orElseThrow(() -> new NotFoundException(
                         String.format("Category with id: %s not found", subCatId)));
         subCategoryRepository.deleteById(subCatId);
         return SimpleResponse.builder().httpStatus(HttpStatus.OK).message(String.format("SubCategory with id: %s saved successfully", subCatId)).build();
@@ -78,13 +86,11 @@ public class SubCategoriesImpl implements SubCategoryService {
     }
 
     @Override
-    public List<SubCategoriesResponse> sortByName(String word) {
-        List<SubCategoriesResponse>subCategories;
-        if (word.equals("asc")){
-            subCategories=subCategoryRepository.sortByNameAsc(word);
-        }else {
-            subCategories=subCategoryRepository.sortByNameDesc(word);
+    public List<SubCategoryResponse> sortByName(String word) {
+        if (word.equals("asc")) {
+            return subCategoryRepository.sortByNameAsc();
+        } else {
+            return subCategoryRepository.sortByNameDesc();
         }
-        return subCategories;
     }
 }

@@ -6,6 +6,7 @@ import peaksoft.dto.request.CategoryRequest;
 import peaksoft.dto.response.category.CategoryResponse;
 import peaksoft.dto.response.SimpleResponse;
 import peaksoft.entity.Category;
+import peaksoft.exception.NotFoundException;
 import peaksoft.repository.CategoryRepository;
 import peaksoft.service.CategoryService;
 import java.util.List;
@@ -43,7 +44,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse getCategoryById(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(()->new NoSuchElementException(
-                        String.format("Category with ID: %s not found",id)));
+                        String.format("Category with id: %s not found",id)));
         return categoryRepository.getCategoryById(id);
     }
 
@@ -63,7 +64,7 @@ public class CategoryServiceImpl implements CategoryService {
     public SimpleResponse updateCategory(Long categoryId,CategoryRequest categoryRequest) {
 
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new NoSuchElementException(
+                .orElseThrow(() -> new NotFoundException(
                         String.format("Category with id: %s not found!", categoryId)));
 
         category.setName(categoryRequest.name());

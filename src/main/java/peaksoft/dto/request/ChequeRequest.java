@@ -3,9 +3,10 @@ package peaksoft.dto.request;
 import lombok.Builder;
 
 import java.time.LocalDate;
+import java.util.List;
+
 @Builder
 public record ChequeRequest(
-         LocalDate createdAt,
-         Long userId
+        List<Long> menuItemId
 ) {
 }

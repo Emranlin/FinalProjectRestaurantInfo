@@ -15,7 +15,7 @@ public interface SubCategoryService {
     SimpleResponse deleteSubCat(Long subCatId);
     SimpleResponse updateSubCat(Long subCatId,SubCategoryRequest subCategoryRequest);
     Map<String,List<SubCategoriesResponse>>findAllWithSubcategories();
-    List<SubCategoriesResponse>sortByName(String word);
+    List<SubCategoryResponse>sortByName(String word);
 
 
 }

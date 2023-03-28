@@ -9,6 +9,9 @@ import peaksoft.dto.response.cheque.ChequeRestaurantAverage;
 import peaksoft.dto.response.SimpleResponse;
 import peaksoft.service.ChequeService;
 
+import java.time.LocalDate;
+import java.util.Objects;
+
 @RestController
 @RequestMapping("/cheques")
 public class ChequeApi {
@@ -20,9 +23,9 @@ public class ChequeApi {
 
     @PreAuthorize("hasAnyAuthority('ADMIN','WAITER')")
 
-    @PostMapping("/{menuItemId}")
-    public SimpleResponse saveCheque(@PathVariable Long menuItemId, @RequestBody ChequeRequest chequeRequest) {
-        return chequeService.saveCheque(menuItemId, chequeRequest);
+    @PostMapping("/{userId}")
+    public SimpleResponse saveCheque(@PathVariable Long userId, @RequestBody ChequeRequest chequeRequest) {
+        return chequeService.saveCheque(userId, chequeRequest);
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN','WAITER')")
@@ -34,7 +37,9 @@ public class ChequeApi {
 
     @PreAuthorize("hasAnyAuthority('ADMIN','WAITER')")
     @PutMapping("/{chequeId}")
-    public SimpleResponse updateCheque(@PathVariable Long chequeId, @RequestBody ChequeRequest chequeRequest) {
+    public SimpleResponse updateCheque(
+            @RequestParam Long userId,
+            @PathVariable Long chequeId, @RequestBody ChequeRequest chequeRequest) {
         return chequeService.updateCheque(chequeId, chequeRequest);
     }
 
@@ -45,14 +50,14 @@ public class ChequeApi {
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN')")
-    @GetMapping("/{userId}")
-    public ChequeResponseSumPerDay countWaiterCheque(@PathVariable Long userId) {
-        return chequeService.countWaiterCheque(userId);
+    @GetMapping("/count/{userId}")
+    public ChequeResponseSumPerDay countWaiterCheque(@PathVariable Long userId,@RequestParam LocalDate date) {
+        return chequeService.countWaiterCheque(userId,date);
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
-    @GetMapping
-    public ChequeRestaurantAverage averageChequeRestaurant() {
-        return chequeService.averageChequeRestaurant();
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping("/avg")
+    public SimpleResponse avg(@RequestParam(required = false) LocalDate date){
+        return chequeService.averageChequeRestaurant(Objects.requireNonNullElseGet(date, LocalDate::now));
     }
 }
